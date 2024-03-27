@@ -1,21 +1,33 @@
-use actix_web::{web, App, HttpServer, HttpResponse, guard};
+use actix_web::{web, App, HttpResponse, HttpServer};
 
-// 127.0.0.1:8080にアクセスすれば"localhost"と表示される
+// this function could be located in a different module
+fn scoped_config(cfg: &mut web::ServiceConfig) {
+    cfg.service(
+        web::resource("/test")
+            .route(web::get().to(|| async { HttpResponse::Ok().body("test") }))
+            .route(web::head().to(HttpResponse::MethodNotAllowed)),
+    );
+}
+
+// this function could be located in a different module
+fn config(cfg: &mut web::ServiceConfig) {
+    cfg.service(
+        web::resource("/app")
+            .route(web::get().to(|| async { HttpResponse::Ok().body("app") }))
+            .route(web::head().to(HttpResponse::MethodNotAllowed)),
+    );
+}
+
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
     HttpServer::new(|| {
         App::new()
-            .service(
-                web::scope("/")
-                    .guard(guard::Host("127.0.0.1"))
-                    .route("", web::to(|| async { HttpResponse::Ok().body("localhost") })),
+            .configure(config)
+            .service(web::scope("/api").configure(scoped_config))
+            .route(
+                "/",
+                web::get().to(|| async { HttpResponse::Ok().body("/route") }),
             )
-            .service(
-                web::scope("/")
-                    .guard(guard::Host("users.rust-lang.org"))
-                    .route("", web::to(|| async { HttpResponse::Ok().body("user") })),
-            )
-            .route("/", web::to(HttpResponse::Ok))
     })
     .bind(("127.0.0.1", 8080))?
     .run()
