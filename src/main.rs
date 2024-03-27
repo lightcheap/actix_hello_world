@@ -1,32 +1,21 @@
-use actix_web::{web, App, HttpServer};
-use std::sync::Mutex;
-// Shared Mutable state addition
-// リロードするたび数が増える
+use actix_web::{web, App, HttpServer, HttpResponse, guard};
 
-// この構造体は状態を表します
-struct AppStateWithCounter {
-    counter: Mutex<i32>,
-}
-
-async fn index(data: web::Data<AppStateWithCounter>) -> String {
-    let mut counter = data.counter.lock().unwrap();
-    *counter += 1;
-
-    format!("Request number: {counter}")
-}
-
+// 127.0.0.1:8080にアクセスすれば"localhost"と表示される
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
-
-    let counter = web::Data::new(AppStateWithCounter {
-        counter: Mutex::new(0),
-    });
-
-    HttpServer::new(move || {
-
+    HttpServer::new(|| {
         App::new()
-            .app_data(counter.clone())
-            .route("/", web::get().to(index))
+            .service(
+                web::scope("/")
+                    .guard(guard::Host("127.0.0.1"))
+                    .route("", web::to(|| async { HttpResponse::Ok().body("localhost") })),
+            )
+            .service(
+                web::scope("/")
+                    .guard(guard::Host("users.rust-lang.org"))
+                    .route("", web::to(|| async { HttpResponse::Ok().body("user") })),
+            )
+            .route("/", web::to(HttpResponse::Ok))
     })
     .bind(("127.0.0.1", 8080))?
     .run()
