@@ -27,3 +27,7 @@ pub async fn post() ->impl Responder {
     // info!("Called post");
     // HttpResponse::Ok().body("called post")
 }
+
+pub async fn not_found() -> impl Responder {
+    HttpResponse::NotFound().body("Page Not Found")
+}
