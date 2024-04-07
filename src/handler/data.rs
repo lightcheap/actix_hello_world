@@ -11,7 +11,7 @@ pub struct Message {
 
 static DATA_FILENAME: &str = "data.json";
 
-// 一覧
+// 一覧用データ取得
 pub fn get_all() -> Vec<Message> {
     let file = fs::read_to_string(DATA_FILENAME).unwrap();
     let mut json_data: Vec<Message> = serde_json::from_str(&file).unwrap();
@@ -21,12 +21,12 @@ pub fn get_all() -> Vec<Message> {
 }
 
 
-// 詳細
+// 投稿１件取得
 pub fn get(id: i32) -> Message { // 関数名：get 引数：i32型 id return： Message型
     // DATA_FILENAME で指定されたファイルの内容を読み込み、file 変数に格納
     let file = fs::read_to_string(DATA_FILENAME).unwrap();
     // file 変数に格納された JSON データを serde_json クレートを使用して Vec<Message> 型にデシリアライズし、json_data 変数に格納
-    let mut json_data = Vec<Message> = serde_json::from_str(&file).unwrap();
+    let json_data: Vec<Message> = serde_json::from_str(&file).unwrap();
     // message 変数を初期化する
     let mut message = Message {id: 0,
             posted: "".to_string(),
@@ -69,8 +69,19 @@ pub fn update(message: &Message) {
     let file = fs::read_to_string(DATA_FILENAME).unwrap();
     let mut json_data: Vec<Message> = serde_json::from_str(&file).unwrap();
     if let Some(index) = json_data.iter().position(|item| item.id == message.id) {
+        // json_data ベクタの index 番目の要素を message の内容で更新
         json_data[index] = message.clone();
         let json_str = serde_json::to_string(&json_data).unwrap();
+        // 変数名がアンダースコアなので、結果の値を返さない
         let _ = fs::write(DATA_FILENAME, json_str);
     }
+}
+
+// 削除
+pub fn remove(id: i32) {
+    let file = fs::read_to_string(DATA_FILENAME).unwrap();
+    let mut json_data: Vec<Message> = serde_json::from_str(&file).unwrap();
+    json_data.retain(|item| item.id != id);
+    let json_str = serde_json::to_string(&json_data).unwrap();
+    let _ = fs::write(DATA_FILENAME, json_str);
 }

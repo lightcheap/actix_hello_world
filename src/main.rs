@@ -1,6 +1,12 @@
 use std::io::Result;
-use actix_web::{App, HttpServer, Responder, HttpResponse, get, web,
-    middleware::Logger};
+use actix_web::{App,
+    HttpServer,
+    // Responder,
+    // HttpResponse,
+    // get,
+    web,
+    middleware::Logger
+};
 
 use env_logger::Env;
 
