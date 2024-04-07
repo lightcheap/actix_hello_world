@@ -7,7 +7,7 @@ use actix_web::{App,
     web,
     middleware::Logger
 };
-
+use tera::Tera; // テンプレートエンジン Tera
 use env_logger::Env;
 
 mod handler;
@@ -16,7 +16,10 @@ mod handler;
 async fn main() -> Result<()> {
     env_logger::init_from_env(Env::default().default_filter_or("info"));
     HttpServer::new(|| {
+        // Teraのインスタンス生成
+        let mut tera = Tera::new("templates/**/*.html").unwrap();
         App::new()
+            .app_data(web::Data::new(tera))
             .service(handler::index) // 一覧
             .service(handler::new) // 新規作成 show()よりも前に登録しないと動作しない
             .service(handler::create) //
