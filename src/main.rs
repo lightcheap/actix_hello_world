@@ -18,7 +18,10 @@ async fn main() -> Result<()> {
     HttpServer::new(|| {
         App::new()
             .service(handler::index) // 一覧
-            .service(handler::show)
+
+            .service(handler::new) // 新規作成 show()よりも前に登録しないと動作しない
+            .service(handler::create) //
+            .service(handler::show) // 詳細
             .default_service(web::to(handler::not_found))
             .wrap(Logger::default())
     })
