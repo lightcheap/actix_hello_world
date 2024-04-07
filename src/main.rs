@@ -17,7 +17,8 @@ async fn main() -> Result<()> {
     env_logger::init_from_env(Env::default().default_filter_or("info"));
     HttpServer::new(|| {
         App::new()
-            .service(handler::post)
+            .service(handler::index) // 一覧
+            .service(handler::show)
             .default_service(web::to(handler::not_found))
             .wrap(Logger::default())
     })

@@ -4,10 +4,10 @@ use actix_web::{
     HttpResponse,
     web,
     get,
-    // post
+    post
 };
-// use serde::{Serialize, Deserialize};
-// use chrono::{DateTime, Local, Duration};
+use serde::{Serialize, Deserialize};
+use chrono::{DateTime, Local, Duration};
 
 // データのモジュールであるdataの取り込みの指定
 mod data;
@@ -24,7 +24,7 @@ pub async fn not_found() -> impl Responder {
 
 // 一覧画面
 #[get("/posts")]
-pub async fn post() ->impl Responder {
+pub async fn index() ->impl Responder {
     info!("Called Post!!");
     // 全投稿データを取り込み Message型
     let posts = data::get_all();
@@ -70,4 +70,81 @@ pub async fn show(info: web::Path<i32>) -> impl Responder {
     body_str += "<div><a href=\"/posts\">一覧へ</a></div>";
     body_str += include_str!("../static/footer.html");
     HttpResponse::Ok().content_type("text/html; charset=utf-8").body(body_str)
+}
+
+#[get("/posts/new")]
+pub async fn new() -> impl Responder {
+    info!("Called new");
+    let mut body_str: String = "".to_string();
+    body_str += include_str!("../static/header.html");
+    body_str += include_str!("../static/form.html");
+    body_str += include_str!("../static/footer.html");
+    body_str = body_str.replace("{{action}}", "create");
+    body_str = body_str.replace("{{id}}", "0");
+    body_str = body_str.replace("{{posted}}", "");
+    body_str = body_str.replace("{{sender}}", "");
+    body_str = body_str.replace("{{content}}", "");
+    body_str = body_str.replace("{{button}}", "登録");
+    HttpResponse::Ok().content_type("text/html; charset=utf-8").body(body_str)
+}
+
+#[get("/posts/{id}/edit")]
+pub async fn edit(info: web::Path<i32>) -> impl Responder {
+    info!("Called edit");
+    let info = info.into_inner();
+    let posts = data::get(info);
+    let mut body_str: String = "".to_string();
+    body_str += include_str!("../static/header.html");
+    body_str += include_str!("../static/form.html");
+    body_str += include_str!("../static/footer.html");
+    body_str = body_str.replace("{{action}}", "update");
+    body_str = body_str.replace("{{id}}", &posts.id.to_string());
+    body_str = body_str.replace("{{posted}}", &posts.posted);
+    body_str = body_str.replace("{{sender}}", &posts.sender);
+    body_str = body_str.replace("{{content}}", &posts.content);
+    body_str = body_str.replace("{{button}}", "更新");
+    HttpResponse::Ok().content_type("text/html; charset=utf-8").body(body_str)
+}
+
+#[derive(Deserialize, Debug)]
+pub struct CreateForm {
+    id: i32,
+    posted: String,
+    sender: String,
+    content: String,
+}
+
+#[post("/posts/create")]
+pub async fn create(params: web::Form<CreateForm>) -> impl Responder {
+    info!("Called create");
+    let now: DateTime<Local> = Local::now();
+    let mut message = data::Message {
+        id: 0,
+        posted: now.format("%Y-%m-%d %H:%M:%S").to_string(),
+        sender: params.sender.clone(),
+        content: params.content.clone()
+    };
+    message = data::create(message);
+    web::Redirect::to(format!("/posts/{}", message.id)).see_other()
+}
+
+#[post("/posts/update")]
+pub async fn update(params: web::Form<CreateForm>) -> impl Responder {
+    info!("Called update");
+    let mut message = data::Message {
+        id: params.id,
+        posted: params.posted.clone(),
+        sender: params.sender.clone(),
+        content: params.content.clone()
+    };
+    data::update(&message);
+    web::Redirect::to(format!("/posts/{}", message.id)).see_other()
+}
+
+#[get("/posts/{id}/delete")]
+pub async fn destroy(info: web::Path<i32>) -> impl Responder {
+    info!("Called destroy");
+    let info = info.into_inner();
+    data::remove(info);
+    web::Redirect::to("/posts").see_other()
 }
