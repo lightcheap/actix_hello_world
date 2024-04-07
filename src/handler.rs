@@ -6,11 +6,15 @@ use actix_web::{
     get,
     post
 };
-use serde::{Serialize, Deserialize};
-use chrono::{DateTime, Local, Duration};
+use serde::{Deserialize};
+use chrono::{DateTime, Local};
 
 // データのモジュールであるdataの取り込みの指定
 mod data;
+
+/* ------------
+    ハンドラー：その他のFWで言うところのControllerみたいなもん？
+*/
 
 // ページが見つかりません
 pub async fn not_found() -> impl Responder {
@@ -72,6 +76,7 @@ pub async fn show(info: web::Path<i32>) -> impl Responder {
     HttpResponse::Ok().content_type("text/html; charset=utf-8").body(body_str)
 }
 
+// 投稿新規作成フォーム画面
 #[get("/posts/new")]
 pub async fn new() -> impl Responder {
     info!("Called new");
@@ -114,6 +119,7 @@ pub struct CreateForm {
     content: String,
 }
 
+// 新規投稿登録
 #[post("/posts/create")]
 pub async fn create(params: web::Form<CreateForm>) -> impl Responder {
     info!("Called create");
@@ -131,7 +137,7 @@ pub async fn create(params: web::Form<CreateForm>) -> impl Responder {
 #[post("/posts/update")]
 pub async fn update(params: web::Form<CreateForm>) -> impl Responder {
     info!("Called update");
-    let mut message = data::Message {
+    let message = data::Message {
         id: params.id,
         posted: params.posted.clone(),
         sender: params.sender.clone(),

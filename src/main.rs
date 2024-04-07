@@ -18,11 +18,13 @@ async fn main() -> Result<()> {
     HttpServer::new(|| {
         App::new()
             .service(handler::index) // 一覧
-
             .service(handler::new) // 新規作成 show()よりも前に登録しないと動作しない
             .service(handler::create) //
+            .service(handler::edit) // 編集
+            .service(handler::update) // 更新
+            .service(handler::destroy) // 削除
             .service(handler::show) // 詳細
-            .default_service(web::to(handler::not_found))
+            .default_service(web::to(handler::not_found)) // not found
             .wrap(Logger::default())
     })
     .bind("127.0.0.1:8000")?
