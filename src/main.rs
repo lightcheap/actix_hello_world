@@ -17,9 +17,10 @@ async fn main() -> Result<()> {
     env_logger::init_from_env(Env::default().default_filter_or("info"));
     HttpServer::new(|| {
         // Teraのインスタンス生成
-        let mut tera = Tera::new("templates/**/*.html").unwrap();
+        let tera = Tera::new("templates/**/*.html").unwrap();
         App::new()
             .app_data(web::Data::new(tera))
+            .service(handler::home) // top
             .service(handler::index) // 一覧
             .service(handler::new) // 新規作成 show()よりも前に登録しないと動作しない
             .service(handler::create) //

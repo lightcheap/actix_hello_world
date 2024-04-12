@@ -23,6 +23,16 @@ pub async fn not_found() -> impl Responder {
     HttpResponse::NotFound().body("Page Not found!")
 }
 
+// TOP画面
+#[get("/")]
+pub async fn home(tmpl: web::Data<tera::Tera>) ->impl Responder {
+    info!("Called home");
+    let context = Context::new();
+    let body_str: String = tmpl.render("home.html", &context).unwrap();
+
+    HttpResponse::Ok().content_type("text/html; charset=utf-8").body(body_str)
+}
+
 // 一覧画面
 #[get("/posts")]
 pub async fn index(tmpl: web::Data<tera::Tera>) ->impl Responder {
@@ -104,7 +114,7 @@ pub async fn create(params: web::Form<CreateForm>) -> impl Responder {
 #[post("/posts/update")]
 pub async fn update(params: web::Form<CreateForm>) -> impl Responder {
     info!("Called update");
-    let mut message = data::Message {
+    let message = data::Message {
         id: params.id,
         posted: params.posted.clone(),
         sender: params.sender.clone(),
