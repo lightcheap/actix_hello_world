@@ -7,15 +7,33 @@ use actix_web::{App,
     web,
     middleware::Logger
 };
-use tera::Tera; // テンプレートエンジン Tera
 use env_logger::Env;
+// テンプレートエンジン Tera
+use tera::Tera;
+// session
+use actix_web::cookie::{Key}; // cookieのキーを使えるようにするための構造体
+use actix_session::storage::CookieSessionStore;
+use actix_session::SessionMiddleware;
 
 mod handler;
+
+// クッキーベースのセッションを使うための関数
+fn build_cookie_session_middleware(key: Key)-> SessionMiddleware<CookieSessionStore> {
+    // インスタンスを返す
+    SessionMiddleware::builder(CookieSessionStore::default(), key).build()
+}
+
 
 #[actix_rt::main]
 async fn main() -> Result<()> {
     env_logger::init_from_env(Env::default().default_filter_or("info"));
-    HttpServer::new(|| {
+    // クッキーのキーの生成
+    let key = Key::generate();
+    // メッセージストアにクッキーベースをセッションを使う場合
+    // let message_store = SessionMessageStore::default();
+    // let message_framework = FlashMessageFramework::builder(message_store).build();
+
+    HttpServer::new(move|| {
         // Teraのインスタンス生成
         let tera = Tera::new("templates/**/*.html").unwrap();
         App::new()
@@ -30,7 +48,9 @@ async fn main() -> Result<()> {
             .service(handler::show) // 詳細
             .default_service(web::to(handler::not_found)) // not found
             .wrap(Logger::default())
-    })
+            // .wrap(message_framework.clone())
+            .wrap(build_cookie_session_middleware(key.clone()))
+        })
     .bind("127.0.0.1:8000")?
     .run()
     .await
