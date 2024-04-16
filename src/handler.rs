@@ -6,6 +6,9 @@ use actix_web::{
     get,
     post
 };
+use actix_web_flash_messages::{
+    FlashMessage, IncomingFlashMessages, Level,
+};
 use serde::{Deserialize};
 use chrono::{DateTime, Local};
 // テンプレートエンジンTeraを使う
@@ -36,11 +39,19 @@ pub async fn home(tmpl: web::Data<tera::Tera>) ->impl Responder {
 
 // 一覧画面
 #[get("/posts")]
-pub async fn index(tmpl: web::Data<tera::Tera>) ->impl Responder {
+pub async fn index(tmpl: web::Data<tera::Tera>, messages:IncomingFlashMessages) ->impl Responder {
     info!("Called Index");
     // 全投稿データを取り込み Message型
     let posts = data::get_all();
     let mut context = Context::new();
+
+    for message in messages.iter() {
+        match message.level() {
+            Level::Success => context.insert("success", &message.content()),
+            Level::Error => context.insert("error", &message.content()),
+            _ => (),
+        }
+    }
     context.insert("posts", &posts);
     let body_str = tmpl.render("index.html", &context).unwrap();
 
@@ -50,11 +61,19 @@ pub async fn index(tmpl: web::Data<tera::Tera>) ->impl Responder {
 
 // 投稿表示
 #[get("/posts/{id}")]
-pub async fn show(tmpl: web::Data<tera::Tera>, info: web::Path<i32>) -> impl Responder {
+pub async fn show(tmpl: web::Data<tera::Tera>, info: web::Path<i32>, messages: IncomingFlashMessages)
+        -> impl Responder {
     info!("Called show");
     let info = info.into_inner();
     let posts = data::get(info);
     let mut context = Context::new();
+    for message in messages.iter() {
+        match message.level() {
+            Level::Success => context.insert("success", &message.content()),
+            Level::Error => context.insert("error", &message.content()),
+            _ => (),
+        }
+    }
     context.insert("post", &posts);
     let body_str = tmpl.render("show.html", &context).unwrap();
     HttpResponse::Ok().content_type("text/html; charset=utf-8").body(body_str)
@@ -116,9 +135,9 @@ pub async fn create(params: web::Form<CreateForm>, session: Session)
     };
     message = data::create(message);
     if message.id == 0 {
-        // FlashMessage::error("投稿でエラーが発生しました。").send();
+        FlashMessage::error("投稿でエラーが発生しました。").send();
     } else {
-        // FlashMessage::success("投稿しました。").send();
+        FlashMessage::success("投稿しました。").send();
     }
     let _ = session.insert("sender", params.sender.clone());
     web::Redirect::to(format!("/posts/{}", message.id)).see_other()

@@ -14,6 +14,10 @@ use tera::Tera;
 use actix_web::cookie::{Key}; // cookieのキーを使えるようにするための構造体
 use actix_session::storage::CookieSessionStore;
 use actix_session::SessionMiddleware;
+// フラッシュメッセージ
+use actix_web_flash_messages::FlashMessagesFramework;
+use actix_web_flash_messages::storage::SessionMessageStore;
+// use actix_web_flash_messages::storage::CookieMessageStore;
 
 mod handler;
 
@@ -30,8 +34,8 @@ async fn main() -> Result<()> {
     // クッキーのキーの生成
     let key = Key::generate();
     // メッセージストアにクッキーベースをセッションを使う場合
-    // let message_store = SessionMessageStore::default();
-    // let message_framework = FlashMessageFramework::builder(message_store).build();
+    let message_store = SessionMessageStore::default();
+    let message_framework = FlashMessagesFramework::builder(message_store).build();
 
     HttpServer::new(move|| {
         // Teraのインスタンス生成
@@ -48,7 +52,7 @@ async fn main() -> Result<()> {
             .service(handler::show) // 詳細
             .default_service(web::to(handler::not_found)) // not found
             .wrap(Logger::default())
-            // .wrap(message_framework.clone())
+            .wrap(message_framework.clone())
             .wrap(build_cookie_session_middleware(key.clone()))
         })
     .bind("127.0.0.1:8000")?
