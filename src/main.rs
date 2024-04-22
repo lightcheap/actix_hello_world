@@ -51,6 +51,15 @@ async fn main() -> Result<()> {
             .service(handler::destroy) // 削除
             .service(handler::show) // 詳細
             .default_service(web::to(handler::not_found)) // not found
+            .service( // api用
+                web::scope("/api")
+                    .service(handler::api_index)
+                    .service(handler::api_show)
+                    .service(handler::api_create)
+                    .service(handler::api_update)
+                    .service(handler::api_destroy)
+                    .default_service(web::to(handler::api_not_found))
+            )
             .wrap(Logger::default())
             .wrap(message_framework.clone())
             .wrap(build_cookie_session_middleware(key.clone()))
